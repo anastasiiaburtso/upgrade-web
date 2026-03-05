@@ -79,15 +79,22 @@ const CourseDetails = ({ user }) => {
     if (!newReview.trim()) return;
     
     try {
-      await fetch('/api/reviews', {
+      const response = await fetch('/api/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ courseId: id, email: user.email, text: newReview })
       });
 
-      // Оновлюємо список (завантажуємо заново, щоб отримати відформатовану дату із сервера)
-      const response = await fetch(`/api/reviews/${id}`);
-      const data = await response.json();
+      // Якщо сервер повернув помилку валідації 
+      if (!response.ok) {
+        const errData = await response.json();
+        alert(errData.error);
+        return;
+      }
+
+      // Оновлюємо список
+      const fetchResponse = await fetch(`/api/reviews/${id}`);
+      const data = await fetchResponse.json();
       setReviews(data);
       setNewReview('');
     } catch (error) {
@@ -314,8 +321,20 @@ function App() {
                       key={course.id} course={course} user={user}
                       isStarted={started.some(c => c.id === course.id)}
                       isCompleted={completed.some(c => c.id === course.id)}
-                      onStart={(c) => setStarted([c, ...started])}
-                      onComplete={(c) => setCompleted([...completed, c])}
+                      onStart={(c) => {
+                        if (!user) {
+                          alert("⚠️ Будь ласка, увійдіть у систему або зареєструйтесь, щоб почати курс!");
+                          return;
+                        }
+                        setStarted([c, ...started]);
+                      }}
+                      onComplete={(c) => {
+                        if (!user) {
+                          alert("⚠️ Будь ласка, увійдіть у систему, щоб завершити курс!");
+                          return;
+                        }
+                        setCompleted([...completed, c]);
+                      }}
                     />
                   ))}
                 </div>
@@ -373,9 +392,27 @@ function App() {
             </section>
           } />
         </Routes>
-      </main>
-    </>
-  );
+        </main>
+
+        {/* --- ФУТЕР --- */}
+        <footer style={{ 
+          backgroundColor: 'rgba(53, 17, 64, 0.4)', 
+          padding: '25px', 
+          textAlign: 'center', 
+          marginTop: '50px', 
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '15px 15px 0 0'
+        }}>
+          <h4 style={{ color: 'var(--neon-pink)', marginBottom: '15px' }}>Контактна інформація</h4>
+          <p style={{ margin: '8px 0', color: 'var(--text-main)' }}>📞 Телефон: +380 99 123 45 67</p>
+          <p style={{ margin: '8px 0', color: 'var(--text-main)' }}>📧 Email: info@upgrade.ua</p>
+          <p style={{ marginTop: '20px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+            © 2026 UpGrade. Всі права захищені.
+          </p>
+        </footer>
+        
+      </>
+    );
 }
 
 export default App;
