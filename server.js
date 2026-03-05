@@ -77,9 +77,24 @@ app.get('/api/reviews/:courseId', async (req, res) => {
 app.post('/api/reviews', async (req, res) => {
     try {
         const { courseId, email, text } = req.body;
+        const reviewText = text ? text.trim() : "";
         
-        // Додаємо timestamp, щоб потім правильно відсортувати
-        const newReview = { courseId, email, text, timestamp: Date.now() };
+        // ВАЛІДАЦІЯ
+        if (reviewText.length < 10 || reviewText.length > 500) {
+            return res.status(400).json({ 
+                error: "Текст відгуку має містити від 10 до 500 символів!" 
+            });
+        }
+        
+        // ДОДАВАННЯ ЧАСУ: у форматі ISO 8601 
+        const newReview = { 
+            courseId, 
+            email, 
+            text: reviewText, 
+            createdAt: new Date().toISOString(), // Генерує дату типу "2026-03-05T20:31:00.000Z"
+            timestamp: Date.now() // для зручного сортування
+        };
+        
         await addDoc(collection(db, "reviews"), newReview);
         
         res.status(201).json({ message: "Відгук успішно додано" });
@@ -89,13 +104,11 @@ app.post('/api/reviews', async (req, res) => {
     }
 });
 
-// ==========================================
-
-// Всі інші запити віддаємо React-у
+// Всі інші запити віддається React-у
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ Сервер успішно запущено на http://localhost:${PORT}`);
+  console.log(`Сервер успішно запущено на http://localhost:${PORT}`);
 });
