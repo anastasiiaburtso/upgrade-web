@@ -15,7 +15,7 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 
-// ТВІЙ КОНФІГ FIREBASE (з 4 лабки)
+// КОНФІГ FIREBASE 
 const firebaseConfig = {
   apiKey: "AIzaSyCQEMphPeHiDlH4Jhe3oo8SRzETCKvm0vM",
   authDomain: "upgrade-app-6bc0c.firebaseapp.com",
@@ -31,10 +31,8 @@ const db = getFirestore(firebaseApp);
 
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// ==========================================
-// API МАРШРУТИ (ВИМОГИ ЛАБ 5, ВАРІАНТ 3)
-// ==========================================
 
+// API МАРШРУТИ
 // 1. HTTP GET: Отримання відгуків з трансформацією (dateFormatted + сортування)
 app.get('/api/reviews/:courseId', async (req, res) => {
     try {
@@ -63,7 +61,7 @@ app.get('/api/reviews/:courseId', async (req, res) => {
             };
         });
 
-        // Сортуємо від найновіших до найстаріших (Вимога методички)
+        // Сортування від найновіших до найстаріших 
         reviews.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
         res.json(reviews);

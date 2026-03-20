@@ -59,7 +59,7 @@ const CourseDetails = ({ user }) => {
   const [reviews, setReviews] = useState([]);
   const [newReview, setNewReview] = useState('');
 
-  // 1. Отримуємо відгуки через наше API (HTTP GET)
+  // 1. Отримуємо відгуки через наше API (HTTP GET) - доступно всім!
   useEffect(() => {
     const fetchReviews = async () => {
       try {
@@ -73,10 +73,10 @@ const CourseDetails = ({ user }) => {
     fetchReviews();
   }, [id]);
 
-  // 2. Зберігаємо відгук через наше API (HTTP POST)
+  // 2. Зберігаємо відгук через наше API (HTTP POST) - тільки якщо є user
   const handleAddReview = async (e) => {
     e.preventDefault();
-    if (!newReview.trim()) return;
+    if (!newReview.trim() || !user) return; // додатковий захист
     
     try {
       const response = await fetch('/api/reviews', {
@@ -102,34 +102,50 @@ const CourseDetails = ({ user }) => {
     }
   };
 
-  if (!user) return <div className="section-container"><h2 style={{color: 'red', textAlign: 'center'}}>Доступ заборонено. Увійдіть у систему!</h2></div>;
-
   return (
     <section className="section-container">
       <div className="card">
-        <h2>Деталі курсу та Відгуки</h2>
-        <p>Ви переглядаєте закриту інформацію для курсу з ID: <strong>{id}</strong></p>
         
-        <h3 style={{ marginTop: '30px', color: 'var(--neon-pink)' }}>Відгуки студентів:</h3>
+        {/* 1. БЛОК ДЕТАЛЕЙ */}
+        {user ? (
+          <>
+            <h2>Деталі курсу</h2>
+            <p>Ви переглядаєте закриту інформацію для курсу з ID: <strong>{id}</strong></p>
+          </>
+        ) : (
+          <div style={{ padding: '15px', backgroundColor: 'rgba(255, 46, 159, 0.1)', borderRadius: '8px', textAlign: 'center', marginBottom: '20px', border: '1px dashed var(--neon-pink)' }}>
+            <p style={{ color: 'var(--text-main)', margin: 0 }}>
+              ⚠️ Деталі курсу приховані. <Link to="/auth" style={{ color: 'var(--neon-pink)', fontWeight: 'bold' }}>Увійдіть у систему</Link>, щоб побачити повну інформацію та мати змогу залишати відгуки.
+            </p>
+          </div>
+        )}
+
+        {/* 2. БЛОК ВІДГУКІВ */}
+        <h3 style={{ marginTop: '20px', color: 'var(--neon-pink)' }}>Відгуки студентів:</h3>
         <ul style={{ listStyle: 'none', padding: 0, marginTop: '15px' }}>
           {reviews.length === 0 ? <li style={{color: 'gray'}}>Відгуків ще немає. Будьте першим!</li> : 
             reviews.map((r, i) => (
               <li key={i} style={{ borderBottom: '1px solid gray', padding: '10px 0' }}>
-                {/* Виводимо поле dateFormatted, яке згенерував наш сервер! */}
+                {/* r.dateFormatted (з сервера) */}
                 <strong>{r.email}</strong>: {r.text} <span style={{fontSize: '0.8rem', color: 'var(--neon-pink)'}}>({r.dateFormatted})</span>
               </li>
             ))
           }
         </ul>
 
-        <form onSubmit={handleAddReview} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '20px' }}>
-          <textarea value={newReview} onChange={e => setNewReview(e.target.value)} placeholder="Напишіть свій відгук..." rows="4" style={{ padding: '10px', borderRadius: '8px', outline: 'none' }} required></textarea>
-          <button type="submit" style={{ padding: '10px', backgroundColor: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Залишити відгук</button>
-        </form>
+        {/* 3. ФОРМА */}
+        {user && (
+          <form onSubmit={handleAddReview} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '20px' }}>
+            <textarea value={newReview} onChange={e => setNewReview(e.target.value)} placeholder="Напишіть свій відгук (10-500 символів)..." rows="4" style={{ padding: '10px', borderRadius: '8px', outline: 'none' }} required></textarea>
+            <button type="submit" style={{ padding: '10px', backgroundColor: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Залишити відгук</button>
+          </form>
+        )}
+
       </div>
     </section>
   );
 };
+
 
 
 // Картка курсу
@@ -140,11 +156,7 @@ const CourseCard = ({ course, onStart, onComplete, isStarted, isCompleted, user 
   else if (isStarted) cardStyle = { borderColor: 'var(--neon-pink)' };
 
   const handleDetailsClick = () => {
-    if (user) {
-      navigate(`/course/${course.id}`);
-    } else {
-      alert("Лише авторизовані користувачі можуть переглядати деталі та залишати відгуки!");
-    }
+    navigate(`/course/${course.id}`);
   };
 
   return (
@@ -177,6 +189,7 @@ const CourseCard = ({ course, onStart, onComplete, isStarted, isCompleted, user 
     </div>
   );
 };
+
 
 // Блок прогресу 
 const ProgressBlock = ({ startedCourses, completedCourses, totalCourses }) => {
